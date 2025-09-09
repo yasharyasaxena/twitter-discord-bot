@@ -36,7 +36,8 @@ class TwitterDiscordBot:
             with open(self.last_check_file, 'r') as f:
                 return datetime.fromisoformat(f.read().strip())
         except FileNotFoundError:
-            return datetime.now() - timedelta(hours=1)
+            # For GitHub Actions, start fresh each time with 30 minutes ago
+            return datetime.now() - timedelta(minutes=30)
     
     def save_last_check_time(self):
         """Save current time as last check time"""
