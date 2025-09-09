@@ -38,4 +38,4 @@ jobs:
           DISCORD_CHANNEL_ID: ${{ secrets.DISCORD_CHANNEL_ID }}
           DISCORD_USER_ID: ${{ secrets.DISCORD_USER_ID }}
         run: |
-          python free_tier_bot.py
+          python health_check.py
