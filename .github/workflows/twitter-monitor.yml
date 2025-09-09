@@ -2,8 +2,8 @@ name: Twitter Brand Monitor (Free Tier)
 
 on:
   schedule:
-    # Runs every 20 minutes (respects free tier limits)
-    - cron: "*/20 * * * *"
+    # Runs every 60 minutes (respects free tier limits)
+    - cron: "0 * * * *"
 
   # Allow manual triggering
   workflow_dispatch:
@@ -38,4 +38,4 @@ jobs:
           DISCORD_CHANNEL_ID: ${{ secrets.DISCORD_CHANNEL_ID }}
           DISCORD_USER_ID: ${{ secrets.DISCORD_USER_ID }}
         run: |
-          python health_check.py
+          python twitter_monitor.py

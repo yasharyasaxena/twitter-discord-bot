@@ -16,6 +16,7 @@ venv.bak/
 
 # Bot data
 last_check.txt
+last_tweet_id.txt
 *.log
 
 # IDE

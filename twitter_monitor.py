@@ -56,32 +56,21 @@ class TwitterDiscordBot:
         self.target_channel_id = int(os.getenv('DISCORD_CHANNEL_ID', '0'))
         self.target_user_id = int(os.getenv('DISCORD_USER_ID', '0'))
         
-        # Store last check time
-        self.last_check_file = 'last_check.txt'
+        # Store last tweet ID
+        self.last_id_file = 'last_tweet_id.txt'
 
-
-    def get_last_check_time(self):
-        """Get the last time we checked for tweets"""
+    def get_last_tweet_id(self):
+        """Get the last tweet ID we checked"""
         try:
-            with open(self.last_check_file, 'r') as f:
-                last_time = datetime.fromisoformat(f.read().strip())
+            with open(self.last_id_file, 'r') as f:
+                return f.read().strip()
         except FileNotFoundError:
-            last_time = datetime.now() - timedelta(hours=1)
-        
-        # Ensure the time is at least 10 seconds before now (Twitter API requirement)
-        now = datetime.now()
-        min_time = now - timedelta(seconds=10)
-        
-        if last_time >= min_time:
-            # If last_time is too recent, use the minimum allowed time
-            return min_time
-        
-        return last_time
+            return None
     
-    def save_last_check_time(self):
-        """Save current time as last check time"""
-        with open(self.last_check_file, 'w') as f:
-            f.write(datetime.now().isoformat())
+    def save_last_tweet_id(self, tweet_id):
+        """Save the latest tweet ID"""
+        with open(self.last_id_file, 'w') as f:
+            f.write(str(tweet_id))
     
     def get_user_id_by_username(self, username):
         """Get user ID from username"""
@@ -93,16 +82,21 @@ class TwitterDiscordBot:
             print(f"Error getting user ID for {username}: {e}")
             return None
     
-    def get_tweets_by_user_id(self, user_id, since_time, max_results=10):
-        """Get tweets from a user ID since specified time"""
+    def get_tweets_by_user_id(self, user_id, since_id=None, max_results=10):
+        """Get tweets from a user ID since specified tweet ID"""
         try:
-            tweets = self.twitter_client.get_users_tweets(
-                id=user_id,
-                tweet_fields=['created_at', 'author_id', 'public_metrics'],
-                user_fields=['username', 'name', 'profile_image_url'],
-                expansions=['author_id'],
-                max_results=max_results,
-            )
+            kwargs = {
+                'id': user_id,
+                'tweet_fields': ['created_at', 'author_id', 'public_metrics'],
+                'user_fields': ['username', 'name', 'profile_image_url'],
+                'expansions': ['author_id'],
+                'max_results': max_results,
+            }
+            
+            if since_id:
+                kwargs['since_id'] = since_id
+            
+            tweets = self.twitter_client.get_users_tweets(**kwargs)
             print(f"Fetched tweets for user ID {user_id}: {tweets}")
             return tweets
         except Exception as e:
@@ -111,13 +105,10 @@ class TwitterDiscordBot:
     
     def get_recent_tweets_from_brands(self):
         """Fetch recent tweets from monitored brands"""
-        since_time = self.get_last_check_time()
+        since_id = self.get_last_tweet_id()
         
-        sleep(15)
-
         print(f"Current time: {datetime.now()}")
-
-        print(f"Checking for tweets since: {since_time}")
+        print(f"Checking for tweets since ID: {since_id}")
         all_tweets = []
         
         for brand in BRANDS_TO_MONITOR:
@@ -125,13 +116,18 @@ class TwitterDiscordBot:
             
             try:
                 # Primary method: Search for recent tweets from this brand
-                tweets = self.twitter_client.search_recent_tweets(
-                    query=f"from:{brand}",
-                    tweet_fields=['created_at', 'author_id', 'public_metrics'],
-                    user_fields=['username', 'name', 'profile_image_url'],
-                    expansions=['author_id'],
-                    max_results=10,
-                )
+                kwargs = {
+                    'query': f"from:{brand}",
+                    'tweet_fields': ['created_at', 'author_id', 'public_metrics'],
+                    'user_fields': ['username', 'name', 'profile_image_url'],
+                    'expansions': ['author_id'],
+                    'max_results': 10,
+                }
+                
+                if since_id:
+                    kwargs['since_id'] = since_id
+                
+                tweets = self.twitter_client.search_recent_tweets(**kwargs)
                 
                 if tweets.data:
                     tweets_found = True
@@ -141,6 +137,7 @@ class TwitterDiscordBot:
                     for tweet in tweets.data:
                         user = users[tweet.author_id]
                         all_tweets.append({
+                            'id': tweet.id,
                             'text': tweet.text,
                             'url': f"https://twitter.com/{user.username}/status/{tweet.id}",
                             'author': user.name,
@@ -158,7 +155,7 @@ class TwitterDiscordBot:
                     
                     if user_id:
                         print(f"Found user ID {user_id} for {brand}, fetching tweets...")
-                        user_tweets = self.get_tweets_by_user_id(user_id, since_time)
+                        user_tweets = self.get_tweets_by_user_id(user_id, since_id)
                         
                         if user_tweets and user_tweets.data:
                             # Get user info for the failsafe method
@@ -169,6 +166,7 @@ class TwitterDiscordBot:
                                 user = user_info.data
                                 for tweet in user_tweets.data:
                                     all_tweets.append({
+                                        'id': tweet.id,
                                         'text': tweet.text,
                                         'url': f"https://twitter.com/{user.username}/status/{tweet.id}",
                                         'author': user.name,
@@ -190,7 +188,7 @@ class TwitterDiscordBot:
                     user_id = self.get_user_id_by_username(brand)
                     
                     if user_id:
-                        user_tweets = self.get_tweets_by_user_id(user_id, since_time)
+                        user_tweets = self.get_tweets_by_user_id(user_id, since_id)
                         
                         if user_tweets and user_tweets.data:
                             user_info = self.twitter_client.get_user(id=user_id,
@@ -200,6 +198,7 @@ class TwitterDiscordBot:
                                 user = user_info.data
                                 for tweet in user_tweets.data:
                                     all_tweets.append({
+                                        'id': tweet.id,
                                         'text': tweet.text,
                                         'url': f"https://twitter.com/{user.username}/status/{tweet.id}",
                                         'author': user.name,
@@ -304,7 +303,9 @@ class TwitterDiscordBot:
         
         print(f"Found {len(recent_tweets)} new tweets")
         
-        # Process each tweet
+        # Process each tweet and track the highest ID
+        highest_tweet_id = None
+        
         for tweet in recent_tweets:
             # Send webhook notification
             webhook_success = self.send_webhook_notification(tweet)
@@ -314,11 +315,19 @@ class TwitterDiscordBot:
             # if self.target_user_id:
             #     await self.send_discord_dm(tweet)
             
+            # Track highest tweet ID (tweet IDs are strings but can be compared as integers)
+            tweet_id_str = str(tweet['id'])
+            if not highest_tweet_id or int(tweet_id_str) > int(highest_tweet_id):
+                highest_tweet_id = tweet_id_str
+            
             # Small delay between notifications
             await asyncio.sleep(1)
         
-        # Update last check time
-        self.save_last_check_time()
+        # Update last tweet ID if we processed any tweets
+        if highest_tweet_id:
+            self.save_last_tweet_id(highest_tweet_id)
+            print(f"Updated last tweet ID to: {highest_tweet_id}")
+        
         print("Monitoring cycle completed")
 
 async def main():
