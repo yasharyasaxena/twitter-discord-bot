@@ -6,12 +6,15 @@ import os
 from datetime import datetime, timedelta
 import asyncio
 
-# Configuration
+# Configuration - Reduced list to avoid rate limits
 BRANDS_TO_MONITOR = [
-    "OpenAI",
-    "anthropic",
-    "google",
-    "Microsoft"
+    "OpenAI",      # High priority
+    "anthropic",   # High priority  
+    "Google"       # High priority
+    # Add more brands gradually as you test rate limits
+    # "Microsoft",
+    # "nvidia",
+    # "huggingface"
 ]
 
 class TwitterDiscordBot:
