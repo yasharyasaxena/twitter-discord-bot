@@ -29,34 +29,34 @@ for brand in BRANDS_TO_MONITOR:
 print("Loaded brands to monitor:", BRANDS_TO_MONITOR)
 
 BEARER_TOKEN = os.getenv('TWITTER_BEARER_TOKEN')
-# CONSUMER_KEY = os.getenv('TWITTER_CONSUMER_KEY')
-# CONSUMER_SECRET = os.getenv('TWITTER_CONSUMER_SECRET')
-# ACCESS_TOKEN = os.getenv('TWITTER_ACCESS_TOKEN')
-# ACCESS_TOKEN_SECRET = os.getenv('TWITTER_TOKEN_SECRET')
+CONSUMER_KEY = os.getenv('TWITTER_CONSUMER_KEY')
+CONSUMER_SECRET = os.getenv('TWITTER_CONSUMER_SECRET')
+ACCESS_TOKEN = os.getenv('TWITTER_ACCESS_TOKEN')
+ACCESS_TOKEN_SECRET = os.getenv('TWITTER_TOKEN_SECRET')
 
-# if not all([BEARER_TOKEN, CONSUMER_KEY, CONSUMER_SECRET, ACCESS_TOKEN, ACCESS_TOKEN_SECRET]):
-#     print("Missing Twitter API credentials:")
-#     if not BEARER_TOKEN:
-#         print(" - TWITTER_BEARER_TOKEN")
-#     if not CONSUMER_KEY:
-#         print(" - TWITTER_CONSUMER_KEY")
-#     if not CONSUMER_SECRET:
-#         print(" - TWITTER_CONSUMER_SECRET")
-#     if not ACCESS_TOKEN:
-#         print(" - TWITTER_ACCESS_TOKEN")
-#     if not ACCESS_TOKEN_SECRET:
-#         print(" - TWITTER_TOKEN_SECRET")
-#     raise ValueError("One or more Twitter API credentials are missing in environment variables.")
+if not all([BEARER_TOKEN, CONSUMER_KEY, CONSUMER_SECRET, ACCESS_TOKEN, ACCESS_TOKEN_SECRET]):
+    print("Missing Twitter API credentials:")
+    if not BEARER_TOKEN:
+        print(" - TWITTER_BEARER_TOKEN")
+    if not CONSUMER_KEY:
+        print(" - TWITTER_CONSUMER_KEY")
+    if not CONSUMER_SECRET:
+        print(" - TWITTER_CONSUMER_SECRET")
+    if not ACCESS_TOKEN:
+        print(" - TWITTER_ACCESS_TOKEN")
+    if not ACCESS_TOKEN_SECRET:
+        print(" - TWITTER_TOKEN_SECRET")
+    raise ValueError("One or more Twitter API credentials are missing in environment variables.")
 
 class TwitterDiscordBot:
     def __init__(self):
         # Twitter API v2 setup
         self.twitter_client = tweepy.Client(
             bearer_token=os.getenv('TWITTER_BEARER_TOKEN'),
-            # consumer_key=os.getenv('TWITTER_CONSUMER_KEY'),
-            # consumer_secret=os.getenv('TWITTER_CONSUMER_SECRET'),
-            # access_token=os.getenv('TWITTER_ACCESS_TOKEN'),
-            # access_token_secret=os.getenv('TWITTER_TOKEN_SECRET'),
+            consumer_key=os.getenv('TWITTER_CONSUMER_KEY'),
+            consumer_secret=os.getenv('TWITTER_CONSUMER_SECRET'),
+            access_token=os.getenv('TWITTER_ACCESS_TOKEN'),
+            access_token_secret=os.getenv('TWITTER_TOKEN_SECRET'),
             wait_on_rate_limit=True
         )
         
