@@ -12,11 +12,7 @@ from time import sleep
 load_dotenv()
 
 # Configuration
-BRANDS_TO_MONITOR = [
-    "bundleddesign",
-    "s1mpleO",
-    "elonmusk"
-]
+BRANDS_TO_MONITOR = [brand.strip() for brand in os.getenv('BRANDS_TO_MONITOR', '').split(',') if brand.strip()]
 
 query = ""
 
